@@ -9,24 +9,52 @@ export const api = axios.create({
   },
 });
 
-export const uploadImage = async (file: File) => {
+export interface UploadResponse {
+  image_id: string;
+  filename: string;
+  url: string;
+  message: string;
+}
+
+export interface SimilarityResult {
+  id: string;
+  filename: string;
+  similarity: number;
+  category: 'high' | 'medium' | 'low';
+  url: string;
+}
+
+export interface CompareResponse {
+  source_id: string;
+  results: SimilarityResult[];
+  total_compared: number;
+}
+
+export const uploadImage = async (file: File, permanent: boolean = false): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append('file', file);
   
-  const response = await api.post('/api/upload', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+  const response = await api.post<UploadResponse>(
+    `/api/upload?permanent=${permanent}`, 
+    formData, 
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  
+  return response.data;
+};
+export const compareImages = async (sourceId: string): Promise<CompareResponse> => {
+  const response = await api.post<CompareResponse>('/api/similarity/compare', {
+    source_image_id: sourceId,
   });
   
   return response.data;
 };
 
-export const compareImages = async (sourceId: string, targetIds: string[]) => {
-  const response = await api.post('/api/similarity/compare', {
-    source_image_id: sourceId,
-    compare_with: targetIds,
-  });
-  
+export const listImages = async () => {
+  const response = await api.get('/api/images');
   return response.data;
 };
