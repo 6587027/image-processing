@@ -17,11 +17,11 @@ const ImageGrid: React.FC<ImageGridProps> = ({ results, onImageClick }) => {
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'high':
-        return '#10B981';
+        return '#10B981'; // Green
       case 'medium':
-        return '#F59E0B';
+        return '#F59E0B'; // Orange/Amber
       case 'low':
-        return '#EF4444';
+        return '#EF4444'; // Red
       default:
         return '#6B7280';
     }
@@ -30,11 +30,11 @@ const ImageGrid: React.FC<ImageGridProps> = ({ results, onImageClick }) => {
   const getCategoryBg = (category: string) => {
     switch (category) {
       case 'high':
-        return '#D1FAE5';
+        return '#D1FAE5'; // Light Green
       case 'medium':
-        return '#FEF3C7';
+        return '#FEF3C7'; // Light Orange/Amber
       case 'low':
-        return '#FEE2E2';
+        return '#FEE2E2'; // Light Red
       default:
         return '#F3F4F6';
     }
@@ -44,7 +44,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({ results, onImageClick }) => {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+        // Updated: Adjusted minmax for slightly smaller cards if needed
+        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
         gap: '1.5rem',
         marginTop: '1rem'
       }}
@@ -57,60 +58,49 @@ const ImageGrid: React.FC<ImageGridProps> = ({ results, onImageClick }) => {
             backgroundColor: 'white',
             borderRadius: '16px',
             padding: '1rem',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+            // Updated: Replaced shadow with border
+            boxShadow: 'none',
+            border: '1px solid #E5E7EB',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
-            border: '2px solid transparent',
-            position: 'relative'
+            position: 'relative',
+            // Added flex layout to manage content order
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem' // Space between items
           }}
+          // Updated: Simplified hover effect
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-4px)';
-            e.currentTarget.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.12)';
             e.currentTarget.style.borderColor = getCategoryColor(result.category);
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
-            e.currentTarget.style.borderColor = 'transparent';
+            e.currentTarget.style.borderColor = '#E5E7EB';
+            e.currentTarget.style.boxShadow = 'none';
           }}
         >
-          <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+          {/* 1. Image */}
+          <div style={{ position: 'relative', width: '100%' }}>
             <img
               src={result.url}
               alt={result.filename}
               style={{
                 width: '100%',
-                height: '200px',
+                height: '180px', // Adjusted height
                 objectFit: 'contain',
                 borderRadius: '12px',
                 backgroundColor: '#F9FAFB'
               }}
             />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '0.5rem',
-                right: '0.5rem',
-                backgroundColor: getCategoryBg(result.category),
-                color: getCategoryColor(result.category),
-                padding: '0.375rem 0.75rem',
-                borderRadius: '12px',
-                fontWeight: '700',
-                fontSize: '1.25rem',
-                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
-                border: `2px solid ${getCategoryColor(result.category)}`
-              }}
-            >
-              {result.similarity}%
-            </div>
           </div>
           
+          {/* 2. Filename */}
           <p
             style={{
               fontSize: '0.875rem',
               color: '#4B5563',
               textAlign: 'center',
-              marginBottom: '0.25rem',
+              margin: 0,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap'
@@ -118,13 +108,31 @@ const ImageGrid: React.FC<ImageGridProps> = ({ results, onImageClick }) => {
           >
             {result.filename}
           </p>
+
+          {/* 3. Similarity Score Box (Moved) */}
+          <div
+            style={{
+              backgroundColor: getCategoryBg(result.category),
+              color: getCategoryColor(result.category),
+              padding: '0.5rem',
+              borderRadius: '8px', // Slightly less rounded than pill
+              fontWeight: '700',
+              fontSize: '1.125rem', // Slightly smaller
+              textAlign: 'center',
+              width: '100%'
+            }}
+          >
+            {result.similarity}%
+          </div>
           
+          {/* 4. "Similarity" Text */}
           <p
             style={{
               fontSize: '0.75rem',
               color: '#9CA3AF',
               textAlign: 'center',
-              fontWeight: '500'
+              fontWeight: '500',
+              margin: 0 // Removed default margin
             }}
           >
             Similarity

@@ -14,7 +14,6 @@ const SourceImage: React.FC<SourceImageProps> = ({ imageUrl, filename, onRemove 
         borderRadius: '16px',
         padding: '1.5rem',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-        marginBottom: '2rem'
       }}
     >
       <div
@@ -29,7 +28,7 @@ const SourceImage: React.FC<SourceImageProps> = ({ imageUrl, filename, onRemove 
           style={{
             fontSize: '1.5rem',
             fontWeight: '700',
-            color: '#2563EB',
+            color: '#15206c',
             margin: 0
           }}
         >
@@ -83,14 +82,19 @@ const SourceImage: React.FC<SourceImageProps> = ({ imageUrl, filename, onRemove 
             backgroundColor: 'white'
           }}
         />
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <p
             style={{
               fontSize: '1rem',
               fontWeight: '600',
               color: '#111827',
-              marginBottom: '1rem'
+              marginBottom: '1rem',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+              maxWidth: '100%'
             }}
+            title={filename}
           >
             {filename}
           </p>
@@ -103,10 +107,10 @@ const SourceImage: React.FC<SourceImageProps> = ({ imageUrl, filename, onRemove 
           >
             <span
               style={{
-                backgroundColor: '#2563EB',
-                color: 'white',
+                backgroundColor: '#EFF6FF',
+                color: '#2563EB',
                 padding: '0.375rem 0.875rem',
-                borderRadius: '8px',
+                borderRadius: '9999px',
                 fontSize: '0.875rem',
                 fontWeight: '600'
               }}
@@ -115,10 +119,10 @@ const SourceImage: React.FC<SourceImageProps> = ({ imageUrl, filename, onRemove 
             </span>
             <span
               style={{
-                backgroundColor: '#2563EB',
-                color: 'white',
+                backgroundColor: '#EFF6FF',
+                color: '#2563EB',
                 padding: '0.375rem 0.875rem',
-                borderRadius: '8px',
+                borderRadius: '9999px',
                 fontSize: '0.875rem',
                 fontWeight: '600'
               }}
@@ -127,10 +131,10 @@ const SourceImage: React.FC<SourceImageProps> = ({ imageUrl, filename, onRemove 
             </span>
             <span
               style={{
-                backgroundColor: '#2563EB',
-                color: 'white',
+                backgroundColor: '#EFF6FF',
+                color: '#2563EB',
                 padding: '0.375rem 0.875rem',
-                borderRadius: '8px',
+                borderRadius: '9999px',
                 fontSize: '0.875rem',
                 fontWeight: '600'
               }}
@@ -139,10 +143,10 @@ const SourceImage: React.FC<SourceImageProps> = ({ imageUrl, filename, onRemove 
             </span>
             <span
               style={{
-                backgroundColor: '#2563EB',
-                color: 'white',
+                backgroundColor: '#EFF6FF',
+                color: '#2563EB',
                 padding: '0.375rem 0.875rem',
-                borderRadius: '8px',
+                borderRadius: '9999px',
                 fontSize: '0.875rem',
                 fontWeight: '600'
               }}

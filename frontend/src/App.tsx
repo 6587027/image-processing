@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import Header from './components/Layout/Header';
-import FileUpload from './components/Upload/FileUpload';
-import SourceImage from './components/Layout/SourceImage';
-import SimilarityFilter from './components/Filters/SimilarityFilter';
-import ImageGrid from './components/Results/ImageGrid';
+// Updated imports to be more explicit with file extensions
+import Header from './components/Layout/Header.tsx';
+import FileUpload from './components/Upload/FileUpload.tsx';
+import SourceImage from './components/Layout/SourceImage.tsx';
+import SimilarityFilter from './components/Filters/SimilarityFilter.tsx';
+import ImageGrid from './components/Results/ImageGrid.tsx';
 import './index.css';
 
 interface UploadedFile {
@@ -62,77 +63,85 @@ function App() {
         {!sourceImage ? (
           <FileUpload onUploadComplete={handleUploadComplete} />
         ) : (
-          <div>
-            <SourceImage
-              imageUrl={sourceImage.preview}
-              filename={sourceImage.file.name}
-              onRemove={handleReset}
-            />
+          // Updated: Two-column layout using Flexbox
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'flex-start' }}>
+            
+            {/* Left Column (Source Image) */}
+            <div style={{ flex: '1 1 350px', minWidth: '320px' }}>
+              <SourceImage
+                imageUrl={sourceImage.preview}
+                filename={sourceImage.file.name}
+                onRemove={handleReset}
+              />
+            </div>
 
-            <div
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                padding: '2rem',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
-              }}
-            >
-              <h3
+            {/* Right Column (Results) */}
+            <div style={{ flex: '2 1 500px', minWidth: '320px' }}>
+              <div
                 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '700',
-                  color: '#15206c',
-                  marginBottom: '1.5rem'
+                  backgroundColor: 'white',
+                  borderRadius: '16px',
+                  padding: '2rem',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
                 }}
               >
-                Similar Images ({filteredResults.length})
-              </h3>
-
-              <SimilarityFilter
-                activeFilter={activeFilter}
-                onFilterChange={setActiveFilter}
-                counts={getCounts()}
-              />
-
-              {filteredResults.length > 0 ? (
-                <ImageGrid 
-                  results={filteredResults}
-                  onImageClick={(result) => {
-                    console.log('Clicked image:', result);
-                  }}
-                />
-              ) : (
-                <div
+                <h3
                   style={{
-                    textAlign: 'center',
-                    padding: '4rem 2rem',
-                    color: '#9CA3AF'
+                    fontSize: '1.5rem',
+                    fontWeight: '700',
+                    color: '#15206c',
+                    marginBottom: '1.5rem'
                   }}
                 >
-                  <svg
-                    width="64"
-                    height="64"
-                    viewBox="0 0 64 64"
-                    fill="none"
-                    style={{ margin: '0 auto 1rem' }}
+                  Similar Images ({filteredResults.length})
+                </h3>
+
+                <SimilarityFilter
+                  activeFilter={activeFilter}
+                  onFilterChange={setActiveFilter}
+                  counts={getCounts()}
+                />
+
+                {filteredResults.length > 0 ? (
+                  <ImageGrid 
+                    results={filteredResults}
+                    onImageClick={(result) => {
+                      console.log('Clicked image:', result);
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      textAlign: 'center',
+                      padding: '4rem 2rem',
+                      color: '#9CA3AF'
+                    }}
                   >
-                    <path
-                      d="M32 8C18.7 8 8 18.7 8 32s10.7 24 24 24 24-10.7 24-24S45.3 8 32 8zm0 4c11 0 20 9 20 20s-9 20-20 20-20-9-20-20 9-20 20-20z"
-                      fill="#D1D5DB"
-                    />
-                    <path
-                      d="M24 24h16v4H24v-4zm0 8h16v4H24v-4z"
-                      fill="#D1D5DB"
-                    />
-                  </svg>
-                  <p style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                    No images found
-                  </p>
-                  <p style={{ fontSize: '0.875rem' }}>
-                    Try selecting a different filter
-                  </p>
-                </div>
-              )}
+                    <svg
+                      width="64"
+                      height="64"
+                      viewBox="0 0 64 64"
+                      fill="none"
+                      style={{ margin: '0 auto 1rem' }}
+                    >
+                      <path
+                        d="M32 8C18.7 8 8 18.7 8 32s10.7 24 24 24 24-10.7 24-24S45.3 8 32 8zm0 4c11 0 20 9 20 20s-9 20-20 20-20-9-20-20 9-20 20-20z"
+                        fill="#D1D5DB"
+                      />
+                      <path
+                        d="M24 24h16v4H24v-4zm0 8h16v4H24v-4z"
+                        fill="#D1D5DB"
+                      />
+                    </svg>
+                    <p style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                      No images found
+                    </p>
+                    <p style={{ fontSize: '0.875rem' }}>
+                      Try selecting a different filter
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -8,6 +8,8 @@ import os
 class ImageProcessor:
     def __init__(self):
         self.supported_formats = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+        # Updated: Initialize SIFT detector
+        self.sift = cv2.SIFT_create()
     
     def load_image(self, image_path: str) -> np.ndarray:
         try:
@@ -39,9 +41,9 @@ class ImageProcessor:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
         
-        # 1. Color Histograms
+        # 1. Color Histograms (Using 16x12x12 bins for better color granularity)
         hist_gray = cv2.calcHist([gray], [0], None, [256], [0, 256])
-        hist_hsv = cv2.calcHist([hsv], [0, 1, 2], None, [8, 8, 8], [0, 256, 0, 256, 0, 256])
+        hist_hsv = cv2.calcHist([hsv], [0, 1, 2], None, [16, 12, 12], [0, 180, 0, 256, 0, 256])
         
         cv2.normalize(hist_gray, hist_gray, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
         cv2.normalize(hist_hsv, hist_hsv, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
@@ -51,15 +53,15 @@ class ImageProcessor:
         edge_hist = cv2.calcHist([edges], [0], None, [256], [0, 256])
         cv2.normalize(edge_hist, edge_hist, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
         
-        # 3. ORB Features (Keypoint detection)
-        orb = cv2.ORB_create(nfeatures=100)
-        keypoints, descriptors = orb.detectAndCompute(gray, None)
+        # 3. Updated: SIFT Features (Keypoint detection)
+        keypoints, descriptors = self.sift.detectAndCompute(gray, None)
         
         features = {
             'histogram_gray': hist_gray.flatten(),
             'histogram_hsv': hist_hsv.flatten(),
             'edge_histogram': edge_hist.flatten(),
-            'orb_descriptors': descriptors,
+            'sift_keypoints': keypoints,
+            'sift_descriptors': descriptors,
             'shape': img.shape,
             'mean_color': cv2.mean(img)[:3],
         }
@@ -67,39 +69,52 @@ class ImageProcessor:
         return features
     
     def compare_histograms(self, hist1: np.ndarray, hist2: np.ndarray) -> float:
-        """Compare two histograms using correlation"""
-        similarity = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+        """
+        Compare two histograms using Bhattacharyya distance.
+        Bhattacharyya distance: 0 = perfect match, 1 = total mismatch.
+        We return 1 - distance to get a similarity score (0 to 100).
+        """
+        distance = cv2.compareHist(hist1, hist2, cv2.HISTCMP_BHATTACHARYYA)
+        similarity = 1 - distance
         return max(0, similarity * 100)
     
-    def compare_orb_features(self, desc1, desc2) -> float:
-        """Compare ORB descriptors using BFMatcher"""
-        if desc1 is None or desc2 is None:
+    def compare_sift_features(self, desc1, desc2, kpts1, kpts2) -> float:
+        """
+        Compare SIFT descriptors using BFMatcher and Lowe's Ratio Test.
+        """
+        if desc1 is None or desc2 is None or len(kpts1) == 0 or len(kpts2) == 0:
             return 0.0
         
         try:
-            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-            matches = bf.match(desc1, desc2)
+            # Use BFMatcher with NORM_L2 for SIFT
+            bf = cv2.BFMatcher(cv2.NORM_L2)
+            # Find 2 best matches for each descriptor (knnMatch)
+            matches = bf.knnMatch(desc1, desc2, k=2)
             
-            if len(matches) == 0:
+            # Apply Lowe's Ratio Test
+            good_matches = []
+            for m, n in matches:
+                # m is the best match, n is the second best
+                if m.distance < 0.75 * n.distance:
+                    good_matches.append(m)
+            
+            # Calculate similarity
+            # Score based on the number of good matches relative to the average number of keypoints
+            if len(good_matches) == 0:
                 return 0.0
             
-            # Calculate similarity based on matches
-            good_matches = sorted(matches, key=lambda x: x.distance)
-            
-            # Take top 50 matches
-            top_matches = good_matches[:min(50, len(good_matches))]
-            
-            # Calculate average distance
-            avg_distance = sum([m.distance for m in top_matches]) / len(top_matches)
-            
-            # Convert to similarity score (lower distance = higher similarity)
-            max_distance = 100
-            similarity = (1 - (avg_distance / max_distance)) * 100
+            avg_kpts = (len(kpts1) + len(kpts2)) / 2.0
+            if avg_kpts == 0:
+                return 0.0
+                
+            # Similarity is the ratio of good matches to the average number of keypoints
+            # We can cap this at 100%
+            similarity = (len(good_matches) / avg_kpts) * 100
             
             return max(0, min(100, similarity))
             
         except Exception as e:
-            print(f"Error comparing ORB features: {e}")
+            print(f"Error comparing SIFT features: {e}")
             return 0.0
     
     def calculate_similarity(self, img1_path: str, img2_path: str) -> float:
@@ -117,7 +132,7 @@ class ImageProcessor:
             features1 = self.extract_features(img1)
             features2 = self.extract_features(img2)
             
-            # 1. Gray histogram similarity (20% weight)
+            # 1. Gray histogram similarity (15% weight)
             gray_sim = self.compare_histograms(
                 features1['histogram_gray'],
                 features2['histogram_gray']
@@ -129,24 +144,26 @@ class ImageProcessor:
                 features2['histogram_hsv']
             )
             
-            # 3. Edge histogram similarity (20% weight)
+            # 3. Edge histogram similarity (15% weight)
             edge_sim = self.compare_histograms(
                 features1['edge_histogram'],
                 features2['edge_histogram']
             )
             
-            # 4. ORB feature similarity (30% weight)
-            orb_sim = self.compare_orb_features(
-                features1['orb_descriptors'],
-                features2['orb_descriptors']
+            # 4. Updated: SIFT feature similarity (40% weight)
+            sift_sim = self.compare_sift_features(
+                features1['sift_descriptors'],
+                features2['sift_descriptors'],
+                features1['sift_keypoints'],
+                features2['sift_keypoints']
             )
             
-            # Weighted average
+            # Weighted average (Updated weights)
             similarity = (
-                gray_sim * 0.2 +
-                hsv_sim * 0.3 +
-                edge_sim * 0.2 +
-                orb_sim * 0.3
+                gray_sim * 0.15 +
+                hsv_sim * 0.30 +
+                edge_sim * 0.15 +
+                sift_sim * 0.40
             )
             
             return round(similarity, 2)
@@ -168,13 +185,29 @@ class ImageProcessor:
         for ext in self.supported_formats:
             image_files.extend(Path(image_directory).glob(f'*{ext}'))
         
+        # Pre-calculate features for the source image once
+        try:
+            source_img = self.load_image(source_image_path)
+            if source_img is None:
+                print(f"Failed to load source image: {source_image_path}")
+                return []
+            source_img = self.resize_image(source_img)
+            source_features = self.extract_features(source_img)
+        except Exception as e:
+            print(f"Error processing source image: {e}")
+            return []
+
         for img_path in image_files:
             img_path_str = str(img_path)
             
             if img_path_str == source_image_path:
                 continue
             
-            similarity = self.calculate_similarity(source_image_path, img_path_str)
+            # Updated: We can't use the full calculate_similarity function directly
+            # if we want to optimize. But for simplicity, we'll keep it.
+            # A future optimization would be to pass features instead of paths.
+            
+            similarity = self.calculate_similarity_with_features(source_features, img_path_str)
             
             if similarity >= 70:
                 category = 'high'
@@ -193,3 +226,53 @@ class ImageProcessor:
         results.sort(key=lambda x: x['similarity'], reverse=True)
         
         return results[:top_k]
+
+    def calculate_similarity_with_features(self, features1: Dict, img2_path: str) -> float:
+        """Helper function to compare features1 dict with img2_path"""
+        try:
+            img2 = self.load_image(img2_path)
+            if img2 is None:
+                return 0.0
+            
+            img2 = self.resize_image(img2)
+            features2 = self.extract_features(img2)
+            
+            # 1. Gray histogram similarity
+            gray_sim = self.compare_histograms(
+                features1['histogram_gray'],
+                features2['histogram_gray']
+            )
+            
+            # 2. HSV histogram similarity
+            hsv_sim = self.compare_histograms(
+                features1['histogram_hsv'],
+                features2['histogram_hsv']
+            )
+            
+            # 3. Edge histogram similarity
+            edge_sim = self.compare_histograms(
+                features1['edge_histogram'],
+                features2['edge_histogram']
+            )
+            
+            # 4. SIFT feature similarity
+            sift_sim = self.compare_sift_features(
+                features1['sift_descriptors'],
+                features2['sift_descriptors'],
+                features1['sift_keypoints'],
+                features2['sift_keypoints']
+            )
+            
+            # Weighted average
+            similarity = (
+                gray_sim * 0.15 +
+                hsv_sim * 0.30 +
+                edge_sim * 0.15 +
+                sift_sim * 0.40
+            )
+            
+            return round(similarity, 2)
+            
+        except Exception as e:
+            print(f"Error calculating similarity with features: {e}")
+            return 0.0

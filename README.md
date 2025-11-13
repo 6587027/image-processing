@@ -146,10 +146,10 @@ npm install
 
 ```bash
 # 1. ตรวจสอบว่าอยู่ในโฟลเดอร์ backend
-# (cd backend)
+cd backend
 
 # 2. ตรวจสอบว่า Virtual Environment ถูกเปิดใช้งานแล้ว
-# (source venv/bin/activate)
+source venv/bin/activate
 
 # 3. รัน Uvicorn server
 uvicorn app.main:app --reload --port 8000
@@ -163,7 +163,7 @@ uvicorn app.main:app --reload --port 8000
 
 ```bash
 # 1. ตรวจสอบว่าอยู่ในโฟลเดอร์ frontend
-# (cd frontend)
+cd frontend
 
 # 2. รัน Vite dev server
 npm run dev
@@ -190,5 +190,5 @@ server config : 'http://localhost:8000/docs#/'
 
 ## 📜 License
 
-MIT License © 2025 ZenithComp Ai Development Team
+© 2025 ZenithComp Ai Development Team
 
